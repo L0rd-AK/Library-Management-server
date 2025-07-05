@@ -6,11 +6,11 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 
 // Import routes
-import bookRoutes from './routes/bookRoutes';
-import borrowRoutes from './routes/borrowRoutes';
+import bookRoutes from './app/routes/bookRoutes';
+import borrowRoutes from './app/routes/borrowRoutes';
 
 // Load environment variables
-dotenv.config({ path: './config.env' });
+dotenv.config({ path: '.env' });
 
 const app = express();
 const PORT = process.env['PORT'] || 5000;
@@ -22,8 +22,8 @@ app.use(morgan('combined'));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost"],
-  methods: ["GET", "POST", "PATCH", "DELETE"],
+  origin: ["http://localhost:5173", "http://localhost","https://amits-library.vercel.app"],
+  methods: ["GET", "POST", "PATCH", "DELETE", "PUT"],
   credentials: true, // optional: if you're using cookies/auth headers
 }));
 // const whitelist = ['http://localhost:5173', 'http://example2.com', "https://dlnk.one/e?id=AvBn5kAdw4PN&type=1"];
@@ -38,17 +38,12 @@ app.use(cors({
 // };
 app.use(express.json());
 
-// Database connection
-mongoose.connect(process.env['MONGODB_URI']!)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
 // Routes
 app.use('/api/books', bookRoutes);
 app.use('/api/borrows', borrowRoutes);
 
 // Health check endpoint
-app.get('/api/health', (_req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
   res.json({ status: 'OK', message: 'Library Management API is running' });
 });
 
@@ -70,6 +65,22 @@ app.use('*', (_req: Request, res: Response) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-}); 
+// Only start the server if not in a serverless environment
+// if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  async function main() {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/library_management');
+      console.log("Connected to MongoDB Using Mongoose!!");
+      const server = app.listen(PORT, () => {
+        console.log(`App is listening on port ${PORT}`);
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  main();
+// }
+
+// Export the app for Vercel
+export default app; 

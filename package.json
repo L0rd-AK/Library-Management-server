@@ -5,10 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "ts-node-dev --respawn --transpile-only server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "seed": "ts-node src/utils/seedData.ts",
     "test-api": "ts-node src/test-api.ts",
+    "test-db": "ts-node src/test-db.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

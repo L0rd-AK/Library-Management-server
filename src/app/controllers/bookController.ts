@@ -29,12 +29,14 @@ export const getAllBooks = async (req: BookRequest, res: Response<ApiResponse<IB
       ];
     }
 
+    // Add timeout to the query
     const books = await Book.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .maxTimeMS(30000); // 30 second timeout
 
-    const total = await Book.countDocuments(filter);
+    const total = await Book.countDocuments(filter).maxTimeMS(30000);
     const totalPages = Math.ceil(total / limit);
 
     const pagination: PaginationInfo = {
@@ -52,6 +54,29 @@ export const getAllBooks = async (req: BookRequest, res: Response<ApiResponse<IB
       pagination
     });
   } catch (error) {
+    console.error('Error in getAllBooks:', error);
+    
+    // Handle specific MongoDB errors
+    if (error instanceof Error) {
+      if (error.message.includes('buffering timed out')) {
+        res.status(503).json({
+          success: false,
+          message: 'Database connection timeout. Please try again.',
+          error: 'Database temporarily unavailable'
+        });
+        return;
+      }
+      
+      if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+        res.status(503).json({
+          success: false,
+          message: 'Database connection failed',
+          error: 'Unable to connect to database'
+        });
+        return;
+      }
+    }
+    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({
       success: false,

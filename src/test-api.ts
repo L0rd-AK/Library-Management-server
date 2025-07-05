@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { IBook } from './types';
+import { IBook } from './app/types';
 
 const BASE_URL = 'http://localhost:5000/api';
 
